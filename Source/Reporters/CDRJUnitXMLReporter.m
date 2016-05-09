@@ -3,6 +3,8 @@
 #import "CDRSpec.h"
 #import "CDROTestNamer.h"
 
+#define xstr(s) str(s)
+#define str(s) #s
 
 @interface CDRJUnitXMLReporter ()
 @property (nonatomic, retain) CDROTestNamer * namer;
@@ -12,7 +14,7 @@
 
 - (instancetype)initWithCedarVersion:(NSString *)cedarVersionString {
     self = [super initWithCedarVersion:cedarVersionString];
-    
+
     if (self = [super init]) {
         successExamples_ = [[NSMutableArray alloc] init];
         failureExamples_ = [[NSMutableArray alloc] init];
@@ -90,7 +92,11 @@
 
 - (void)writeXmlToFile:(NSString *)xml {
     char *xmlFile = getenv("CEDAR_JUNIT_XML_FILE");
+#if defined (CEDAR_JUNIT_XML_FILE)
+    if (!xmlFile) xmlFile = xstr(CEDAR_JUNIT_XML_FILE);
+#else
     if (!xmlFile) xmlFile = "build/TEST-Cedar.xml";
+#endif
 
     [xml writeToFile:[NSString stringWithUTF8String:xmlFile]
           atomically:YES

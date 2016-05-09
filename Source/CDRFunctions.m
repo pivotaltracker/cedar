@@ -349,6 +349,21 @@ int CDRRunSpecsWithCustomExampleReporters(NSArray *reporters) {
     }
 }
 
+id<CDRExampleReporter> reporterFromString(NSString* reporterClassName) {
+    Class reporterClass = [NSClassFromString(reporterClassName) retain];
+
+    id<CDRExampleReporter> reporter = nil;
+
+    if (reporterClass) {
+        if ([reporterClass instancesRespondToSelector:@selector(initWithCedarVersion:)]) {
+            reporter = [[[reporterClass alloc] initWithCedarVersion:CDRVersionString()] autorelease];
+        } else {
+            reporter = [[[reporterClass alloc] init] autorelease];
+        }
+    }
+    return reporter;
+}
+
 NSArray *CDRReportersToRun() {
     const char *defaultReporterClassName = "CDRDefaultReporter";
     BOOL isTestBundle = objc_getClass("SenTestProbe") || objc_getClass("XCTestProbe");
@@ -356,7 +371,18 @@ NSArray *CDRReportersToRun() {
         // Cedar for Test Bundles hooks into XCTest's test reporting system.
         defaultReporterClassName = "CDRBufferedDefaultReporter";
     }
-    return CDRReportersFromEnv(defaultReporterClassName);
+    NSMutableArray *reporters = [NSMutableArray arrayWithArray:CDRReportersFromEnv(defaultReporterClassName)];
+
+#if CDR_COLORIZED_REPORTER
+    [reporters addObject: reporterFromString(@"CDRColorizedReporter")];
+#endif
+#if CDF_TEAM_CITY_REPORTER
+    [reporters addObject: reporterFromString(@"CDRTeamCityReporter")];
+#endif
+#if CDR_JUNIT_XML_REPORTER
+    [reporters addObject: reporterFromString(@"CDRJUnitXMLReporter")];
+#endif
+    return reporters;
 }
 
 int CDRRunSpecs() {
